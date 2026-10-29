@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilimdon Pro - Multi-Subject Educational Game</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#06b6d4',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .light .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+        }
+
+        .glass-button {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .light .glass-button {
+            background: rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            color: #1e293b;
+        }
+
+        .glass-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .light .glass-button:hover:not(:disabled) {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .glass-button:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .timer-progress {
+            transition: width 0.1s linear, background-color 0.3s ease;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .animate-pulse-ring {
+            animation: pulse-ring 1.5s infinite ease-in-out;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 dark:bg-slate-950 dark:text-slate-100 light:bg-slate-100 light:text-slate-900 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- TOP BAR / HEADER -->
+    <header class="w-full max-w-5xl mx-auto p-4 flex items-center justify-between z-20">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="showScreen('main-menu')">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 via-rose-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-2xl animate-pulse-ring">
+                🎓
+            </div>
+            <div>
+                <h1 class="text-2xl font-black tracking-tight bg-gradient-to-r from-amber-400 via-rose-400 to-indigo-400 bg-clip-text text-transparent">
+                    BILIMDON <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 font-extrabold uppercase">PRO</span>
+                </h1>
+                <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500" data-i18n="appSubtitle">Intellektual Ta'lim Platformasi</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Language Switcher Button -->
+            <button onclick="toggleAppLanguage()" id="lang-switch-btn" class="px-3 py-2 rounded-xl glass-button text-xs font-black text-amber-400 flex items-center gap-1.5 border-amber-500/30">
+                🌐 <span id="current-lang-code">UZ</span>
+            </button>
+            <!-- Theme Toggle -->
+            <button onclick="toggleTheme()" class="w-10 h-10 rounded-xl glass-button flex items-center justify-center text-slate-300 dark:text-slate-300 light:text-slate-700">
+                <i class="fa-solid fa-moon dark:inline hidden" id="theme-icon-dark"></i>
+                <i class="fa-solid fa-sun light:inline inline dark:hidden" id="theme-icon-light"></i>
+            </button>
+            <!-- Sound Toggle -->
+            <button id="sound-btn" onclick="toggleSound()" class="w-10 h-10 rounded-xl glass-button flex items-center justify-center text-slate-300 dark:text-slate-300 light:text-slate-700">
+                <i class="fa-solid fa-volume-high" id="sound-icon"></i>
+            </button>
+            <!-- Profile Badge -->
+            <button onclick="showScreen('profile-screen')" class="flex items-center gap-2 px-3 py-2 rounded-xl glass-button text-xs font-bold text-indigo-300 border-indigo-500/30">
+                <i class="fa-solid fa-trophy text-amber-400"></i>
+                <span id="header-level">LVL 1</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="w-full max-w-4xl mx-auto p-4 my-auto relative z-10">
+
+        <!-- 1. BOSH MENYU -->
+        <div id="screen-main-menu" class="screen-view space-y-6">
+            <!-- User Status Header -->
+            <div class="glass-card rounded-3xl p-6 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-3xl font-black text-white shadow-xl">
+                        <span id="user-avatar">🏆</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-xl font-bold" id="user-title" data-i18n="userDefaultTitle">Bilim Izlovchi</h2>
+                            <span class="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold border border-amber-500/30" id="user-level-badge">Level 1</span>
+                        </div>
+                        <!-- XP Progress -->
+                        <div class="w-48 md:w-64 bg-slate-800/80 rounded-full h-2.5 mt-2 border border-white/10 overflow-hidden">
+                            <div id="user-xp-bar" class="bg-gradient-to-r from-amber-400 to-rose-500 h-full w-0 transition-all duration-500"></div>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1" id="user-xp-text">0 / 100 XP</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 text-center w-full md:w-auto justify-around">
+                    <div class="bg-slate-900/50 dark:bg-slate-900/50 light:bg-slate-200/60 p-3 rounded-2xl border border-white/5 min-w-[90px]">
+                        <p class="text-[10px] text-slate-400 font-semibold uppercase" data-i18n="scoreLabel">BALL</p>
+                        <p class="text-xl font-black text-amber-400" id="total-score-val">0</p>
+                    </div>
+                    <div class="bg-slate-900/50 dark:bg-slate-900/50 light:bg-slate-200/60 p-3 rounded-2xl border border-white/5 min-w-[90px]">
+                        <p class="text-[10px] text-slate-400 font-semibold uppercase" data-i18n="gamesLabel">O'YINLAR</p>
+                        <p class="text-xl font-black text-emerald-400" id="total-games-val">0</p>
+                    </div>
+                    <div class="bg-slate-900/50 dark:bg-slate-900/50 light:bg-slate-200/60 p-3 rounded-2xl border border-white/5 min-w-[90px]">
+                        <p class="text-[10px] text-slate-400 font-semibold uppercase" data-i18n="accuracyLabel">ANIQLIK</p>
+                        <p class="text-xl font-black text-indigo-400" id="total-acc-val">0%</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- O'yin Rejimlarini Tanlash -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Klassik Mode -->
+                <div onclick="selectGameMode('classic')" class="glass-card rounded-3xl p-5 cursor-pointer hover:border-amber-500/50 transition duration-300 group relative overflow-hidden flex flex-col justify-between">
+                    <div class="absolute -right-4 -top-4 w-20 h-20 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/30 transition"></div>
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl mb-4 border border-amber-500/30">🎯</div>
+                        <h3 class="text-lg font-bold group-hover:text-amber-400 transition" data-i18n="modeClassicTitle">Klassik Sinov</h3>
+                        <p class="text-xs text-slate-400 mt-1" data-i18n="modeClassicDesc">10 ta savol, vaqt balansi bilan.</p>
+                    </div>
+                    <span class="mt-4 text-xs font-bold text-amber-400 flex items-center gap-1"><span data-i18n="startBtn">Boshlash</span> <i class="fa-solid fa-arrow-right text-[10px]"></i></span>
+                </div>
+
+                <!-- Survival Mode -->
+                <div onclick="selectGameMode('survival')" class="glass-card rounded-3xl p-5 cursor-pointer hover:border-rose-500/50 transition duration-300 group relative overflow-hidden flex flex-col justify-between">
+                    <div class="absolute -right-4 -top-4 w-20 h-20 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/30 transition"></div>
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-2xl mb-4 border border-rose-500/30">❤️</div>
+                        <h3 class="text-lg font-bold group-hover:text-rose-400 transition" data-i18n="modeSurvivalTitle">Omon Qolish</h3>
+                        <p class="text-xs text-slate-400 mt-1" data-i18n="modeSurvivalDesc">3 ta jon bilan cheksiz test.</p>
+                    </div>
+                    <span class="mt-4 text-xs font-bold text-rose-400 flex items-center gap-1"><span data-i18n="startBtn">Boshlash</span> <i class="fa-solid fa-arrow-right text-[10px]"></i></span>
+                </div>
+
+                <!-- Blitz Mode -->
+                <div onclick="selectGameMode('blitz')" class="glass-card rounded-3xl p-5 cursor-pointer hover:border-indigo-500/50 transition duration-300 group relative overflow-hidden flex flex-col justify-between">
+                    <div class="absolute -right-4 -top-4 w-20 h-20 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/30 transition"></div>
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-2xl mb-4 border border-indigo-500/30">⚡</div>
+                        <h3 class="text-lg font-bold group-hover:text-indigo-400 transition" data-i18n="modeBlitzTitle">Blitz 60s</h3>
+                        <p class="text-xs text-slate-400 mt-1" data-i18n="modeBlitzDesc">60 soniyada maksimal to'g'ri javob.</p>
+                    </div>
+                    <span class="mt-4 text-xs font-bold text-indigo-400 flex items-center gap-1"><span data-i18n="startBtn">Boshlash</span> <i class="fa-solid fa-arrow-right text-[10px]"></i></span>
+                </div>
+
+                <!-- Practice / Flashcard -->
+                <div onclick="showScreen('flashcards-screen')" class="glass-card rounded-3xl p-5 cursor-pointer hover:border-emerald-500/50 transition duration-300 group relative overflow-hidden flex flex-col justify-between">
+                    <div class="absolute -right-4 -top-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/30 transition"></div>
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl mb-4 border border-emerald-500/30">🎴</div>
+                        <h3 class="text-lg font-bold group-hover:text-emerald-400 transition" data-i18n="modeLearnTitle">Flashcard</h3>
+                        <p class="text-xs text-slate-400 mt-1" data-i18n="modeLearnDesc">Taymersiz va shtrafsiz o'rganish.</p>
+                    </div>
+                    <span class="mt-4 text-xs font-bold text-emerald-400 flex items-center gap-1"><span data-i18n="learnBtn">O'rganish</span> <i class="fa-solid fa-arrow-right text-[10px]"></i></span>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <button onclick="showScreen('profile-screen')" class="py-3 px-4 rounded-2xl glass-button text-sm font-semibold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-amber-400"></i> <span data-i18n="btnProfile">Statistika & Profil</span>
+                </button>
+                <button onclick="showScreen('achievements-screen')" class="py-3 px-4 rounded-2xl glass-button text-sm font-semibold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-medal text-rose-400"></i> <span data-i18n="btnBadges">Yutuqlar</span>
+                </button>
+                <button onclick="showScreen('custom-quiz-screen')" class="col-span-2 md:col-span-1 py-3 px-4 rounded-2xl glass-button text-sm font-semibold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-sliders text-indigo-400"></i> <span data-i18n="btnCustom">Maxsus Konstruktor</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. SETUP SCREEN -->
+        <div id="screen-setup" class="screen-view hidden space-y-6">
+            <div class="glass-card rounded-3xl p-6 md:p-8 space-y-6">
+                <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-indigo-400" id="selected-mode-title">Klassik Sinov</h2>
+                        <p class="text-xs text-slate-400" data-i18n="setupSub">O'yin parametrini tanlang</p>
+                    </div>
+                    <button onclick="showScreen('main-menu')" class="w-10 h-10 rounded-xl glass-button flex items-center justify-center text-slate-400 hover:text-white">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Subject Selection -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-300 mb-3" data-i18n="stepSubject">1. Fanni tanlang:</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <button onclick="selectCategory('math')" id="cat-btn-math" class="cat-btn py-4 px-3 rounded-2xl glass-button text-center font-bold flex flex-col items-center gap-2 active">
+                            <span class="text-3xl">🔢</span>
+                            <span class="text-xs" data-i18n="subMath">Matematika</span>
+                        </button>
+                        <button onclick="selectCategory('russian')" id="cat-btn-russian" class="cat-btn py-4 px-3 rounded-2xl glass-button text-center font-bold flex flex-col items-center gap-2">
+                            <span class="text-3xl">🇷🇺</span>
+                            <span class="text-xs" data-i18n="subRussian">Rus Tili</span>
+                        </button>
+                        <button onclick="selectCategory('english')" id="cat-btn-english" class="cat-btn py-4 px-3 rounded-2xl glass-button text-center font-bold flex flex-col items-center gap-2">
+                            <span class="text-3xl">🇬🇧</span>
+                            <span class="text-xs" data-i18n="subEnglish">Ingliz Tili</span>
+                        </button>
+                        <button onclick="selectCategory('general')" id="cat-btn-general" class="cat-btn py-4 px-3 rounded-2xl glass-button text-center font-bold flex flex-col items-center gap-2">
+                            <span class="text-3xl">🧠</span>
+                            <span class="text-xs" data-i18n="subGeneral">Umumiy Bilim</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Difficulty Selection -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-300 mb-3" data-i18n="stepDifficulty">2. Qiyinlik darajasi:</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="selectDifficulty('easy')" id="diff-btn-easy" class="diff-btn py-3 px-3 rounded-xl glass-button text-xs md:text-sm font-semibold active" data-i18n="diffEasy">Oson</button>
+                        <button onclick="selectDifficulty('medium')" id="diff-btn-medium" class="diff-btn py-3 px-3 rounded-xl glass-button text-xs md:text-sm font-semibold" data-i18n="diffMedium">O'rtacha</button>
+                        <button onclick="selectDifficulty('hard')" id="diff-btn-hard" class="diff-btn py-3 px-3 rounded-xl glass-button text-xs md:text-sm font-semibold" data-i18n="diffHard">Qiyin</button>
+                    </div>
+                </div>
+
+                <button onclick="startGameSession()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 font-extrabold text-lg text-white shadow-xl hover:opacity-95 transition">
+                    <span data-i18n="startGameBtn">O'YINNI BOSHLASH</span> <i class="fa-solid fa-play ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. MAIN ARENA / QUIZ -->
+        <div id="screen-quiz" class="screen-view hidden space-y-4">
+            <div class="glass-card rounded-2xl p-4 flex items-center justify-between gap-2 border border-white/10">
+                <div class="flex items-center gap-3">
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase" data-i18n="scoreLabel">BALL</p>
+                        <p class="text-2xl font-black text-amber-400" id="quiz-score">0</p>
+                    </div>
+                    <div class="border-l border-white/10 pl-3">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">STREAK 🔥</p>
+                        <p class="text-xl font-extrabold text-rose-400" id="quiz-streak">x1.0</p>
+                    </div>
+                </div>
+
+                <div id="lives-container" class="hidden flex items-center gap-1 text-rose-500 text-xl">
+                    <i class="fa-solid fa-heart" id="heart-1"></i>
+                    <i class="fa-solid fa-heart" id="heart-2"></i>
+                    <i class="fa-solid fa-heart" id="heart-3"></i>
+                </div>
+
+                <div class="text-right">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase" data-i18n="timeLabel">VAQT</p>
+                    <p class="text-2xl font-black text-indigo-400" id="quiz-timer-text">15s</p>
+                </div>
+            </div>
+
+            <!-- Timer Bar -->
+            <div class="w-full bg-slate-900/80 rounded-full h-2.5 overflow-hidden border border-white/10">
+                <div id="quiz-timer-bar" class="timer-progress bg-emerald-400 h-full w-full"></div>
+            </div>
+
+            <!-- Lifelines -->
+            <div class="grid grid-cols-4 gap-2">
+                <button onclick="useLifeline('5050')" id="life-5050" class="py-2.5 px-2 rounded-xl glass-button text-xs font-bold text-amber-300 flex items-center justify-center gap-1 border-amber-500/30">
+                    <span>✂️ 50:50</span>
+                </button>
+                <button onclick="useLifeline('freeze')" id="life-freeze" class="py-2.5 px-2 rounded-xl glass-button text-xs font-bold text-cyan-300 flex items-center justify-center gap-1 border-cyan-500/30">
+                    <span>❄️ <span data-i18n="lifeFreeze">Muzlatish</span></span>
+                </button>
+                <button onclick="useLifeline('double')" id="life-double" class="py-2.5 px-2 rounded-xl glass-button text-xs font-bold text-purple-300 flex items-center justify-center gap-1 border-purple-500/30">
+                    <span>🚀 2x</span>
+                </button>
+                <button onclick="useLifeline('skip')" id="life-skip" class="py-2.5 px-2 rounded-xl glass-button text-xs font-bold text-emerald-300 flex items-center justify-center gap-1 border-emerald-500/30">
+                    <span>⏭️ <span data-i18n="lifeSkip">O'tkazish</span></span>
+                </button>
+            </div>
+
+            <!-- Question Card -->
+            <div id="quiz-card" class="glass-card rounded-3xl p-6 text-center border border-white/10 shadow-2xl relative overflow-hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <span id="quiz-badge" class="text-[10px] font-extrabold uppercase px-3 py-1 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-500/30">
+                        Matematika
+                    </span>
+                    <span id="quiz-question-counter" class="text-xs font-bold text-slate-400">1 / 10</span>
+                </div>
+
+                <div class="flex items-center justify-center gap-3">
+                    <h2 id="quiz-question-text" class="text-2xl md:text-3xl font-black my-2 min-h-[60px] flex items-center justify-center">...</h2>
+                    <button id="tts-btn" onclick="speakCurrentQuestion()" class="hidden w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center justify-center hover:scale-110 transition">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                </div>
+                <p id="quiz-question-hint" class="text-xs text-slate-400 mb-2">...</p>
+            </div>
+
+            <!-- Options Grid -->
+            <div id="quiz-options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+
+            <div class="flex justify-between items-center pt-2">
+                <button onclick="confirmExitGame()" class="py-2 px-4 rounded-xl glass-button text-xs font-semibold text-rose-400 hover:bg-rose-500/20">
+                    <i class="fa-solid fa-door-open mr-1"></i> <span data-i18n="exitBtn">Chiqish</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 4. RESULTS SCREEN -->
+        <div id="screen-results" class="screen-view hidden space-y-6 text-center">
+            <div class="glass-card rounded-3xl p-6 md:p-8 space-y-6">
+                <div class="text-6xl animate-bounce">🏆</div>
+                <div>
+                    <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-rose-400" data-i18n="resultTitle">O'yin Yakunlandi!</h2>
+                    <p class="text-sm text-slate-400 mt-1" data-i18n="resultSubtitle">Ajoyib natija ko'rsatdingiz!</p>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-4">
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/10">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase" data-i18n="scoreLabel">BALL</p>
+                        <p class="text-3xl font-black text-amber-400" id="res-score">0</p>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/10">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase" data-i18n="correctLabel">TO'G'RI JAVOBLAR</p>
+                        <p class="text-3xl font-black text-emerald-400" id="res-correct">0 / 0</p>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/10">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase" data-i18n="earnedXpLabel">OLINGAN XP</p>
+                        <p class="text-3xl font-black text-indigo-400" id="res-xp">+0 XP</p>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/10">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">MAX STREAK</p>
+                        <p class="text-3xl font-black text-rose-400" id="res-streak">0</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-3">
+                    <button onclick="startGameSession()" class="flex-1 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-indigo-600 font-extrabold text-white shadow-lg">
+                        <i class="fa-solid fa-rotate-right mr-2"></i> <span data-i18n="replayBtn">Qaytadan O'ynash</span>
+                    </button>
+                    <button onclick="showScreen('main-menu')" class="flex-1 py-4 rounded-2xl glass-button font-bold text-slate-300" data-i18n="mainMenuBtn">
+                        Bosh Menyuga Qaytish
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. FLASHCARDS EKRANI -->
+        <div id="screen-flashcards" class="screen-view hidden space-y-6">
+            <div class="glass-card rounded-3xl p-6 md:p-8 space-y-6">
+                <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-emerald-400">🎴 Flashcard</h2>
+                        <p class="text-xs text-slate-400" data-i18n="flashcardSub">O'z tezligingizda bilimlarni o'rganing</p>
+                    </div>
+                    <button onclick="showScreen('main-menu')" class="w-10 h-10 rounded-xl glass-button flex items-center justify-center">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="flex gap-2 overflow-x-auto pb-2">
+                    <button onclick="loadFlashcards('russian')" class="px-4 py-2 rounded-xl glass-button text-xs font-bold whitespace-nowrap">🇷🇺 <span data-i18n="subRussian">Rus Tili</span></button>
+                    <button onclick="loadFlashcards('english')" class="px-4 py-2 rounded-xl glass-button text-xs font-bold whitespace-nowrap">🇬🇧 <span data-i18n="subEnglish">Ingliz Tili</span></button>
+                    <button onclick="loadFlashcards('math')" class="px-4 py-2 rounded-xl glass-button text-xs font-bold whitespace-nowrap">🔢 <span data-i18n="subMath">Matematika</span></button>
+                    <button onclick="loadFlashcards('general')" class="px-4 py-2 rounded-xl glass-button text-xs font-bold whitespace-nowrap">🧠 <span data-i18n="subGeneral">Umumiy</span></button>
+                </div>
+
+                <div class="min-h-[260px] bg-slate-900/60 rounded-3xl p-8 flex flex-col items-center justify-center text-center border border-white/10 relative shadow-inner">
+                    <span id="fc-category-badge" class="absolute top-4 left-4 text-[10px] font-bold uppercase px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Kategoriya</span>
+                    <button id="fc-audio-btn" onclick="speakFlashcard()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center hover:scale-110 transition">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+
+                    <h3 id="fc-term" class="text-3xl md:text-4xl font-black text-white mb-3">...</h3>
+                    <div id="fc-answer-box" class="mt-4 p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/30 hidden">
+                        <p id="fc-definition" class="text-xl font-bold text-emerald-300">...</p>
+                        <p id="fc-example" class="text-xs text-slate-400 mt-1">...</p>
+                    </div>
+
+                    <button id="fc-reveal-btn" onclick="revealFlashcardAnswer()" class="mt-6 px-6 py-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 hover:bg-emerald-500/30 transition" data-i18n="revealBtn">
+                        Javobni Ko'rsatish 👀
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <button onclick="prevFlashcard()" class="py-3 px-6 rounded-2xl glass-button font-bold text-sm" data-i18n="prevBtn"><i class="fa-solid fa-arrow-left mr-2"></i> Oldingisi</button>
+                    <span id="fc-count" class="text-xs font-bold text-slate-400">1 / 10</span>
+                    <button onclick="nextFlashcard()" class="py-3 px-6 rounded-2xl glass-button font-bold text-sm" data-i18n="nextBtn">Keyingisi <i class="fa-solid fa-arrow-right ml-2"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. PROFIL & STATISTIKA EKRANI -->
+        <div id="screen-profile" class="screen-view hidden space-y-6">
+            <div class="glass-card rounded-3xl p-6 md:p-8 space-y-6">
+                <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-amber-400" data-i18n="profileTitle">📊 Profil & Statistika</h2>
+                        <p class="text-xs text-slate-400" data-i18n="profileSub">Erishgan barcha natijalaringiz</p>
+                    </div>
+                    <button onclick="showScreen('main-menu')" class="w-10 h-10 rounded-xl glass-button flex items-center justify-center">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/10">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase" data-i18n="gamesLabel">JAMI O'YINLAR</p>
+                        <p class="text-2xl font-black text-white" id="stat-total-games">0</p>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/10">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase" data-i18n="scoreLabel">UMUMIY BALL</p>
+                        <p class="text-2xl font-black text-amber-400" id="stat-total-score">0</p>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/10">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase" data-i18n="accuracyLabel">O'RTACHA ANIQLIK</p>
+                        <p class="text-2xl font-black text-emerald-400" id="stat-accuracy">0%</p>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/10">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">MAX STREAK</p>
+                        <p class="text-2xl font-black text-rose-400" id="stat-max-streak">0</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3 bg-slate-900/40 p-5 rounded-2xl border border-white/5">
+                    <h3 class="text-sm font-bold text-slate-300" data-i18n="subjectAccTitle">Fanlar bo'yicha aniqlik:</h3>
+                    
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span>🔢 <span data-i18n="subMath">Matematika</span></span>
+                            <span id="acc-math-val">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                            <div id="acc-math-bar" class="bg-amber-400 h-full w-0"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span>🇷🇺 <span data-i18n="subRussian">Rus Tili</span></span>
+                            <span id="acc-russian-val">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                            <div id="acc-russian-bar" class="bg-rose-400 h-full w-0"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span>🇬🇧 <span data-i18n="subEnglish">Ingliz Tili</span></span>
+                            <span id="acc-english-val">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                            <div id="acc-english-bar" class="bg-indigo-400 h-full w-0"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1">
+                            <span>🧠 <span data-i18n="subGeneral">Umumiy Bilim</span></span>
+                            <span id="acc-general-val">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                            <div id="acc-general-bar" class="bg-emerald-400 h-full w-0"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. ACHIEVEMENTS SCREEN -->
+        <div id="screen-achievements" class="screen-view hidden space-y-6">
+            <div class="glass-card rounded-3xl p-6 md:p-8 space-y-6">
+                <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-rose-400" data-i18n="badgesTitle">🏅 Yutuqlar (Badges)</h2>
+                        <p class="text-xs text-slate-400" data-i18n="badgesSub">O'yin orqali nishonlarni oching</p>
+                    </div>
+                    <button onclick="showScreen('main-menu')" class="w-10 h-10 rounded-xl glass-button flex items-center justify-center">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div id="achievements-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+        </div>
+
+        <!-- 8. CUSTOM QUIZ EKRANI -->
+        <div id="screen-custom-quiz" class="screen-view hidden space-y-6">
+            <div class="glass-card rounded-3xl p-6 md:p-8 space-y-6">
+                <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-indigo-400" data-i18n="customTitle">🛠️ Maxsus Test Konstruktori</h2>
+                        <p class="text-xs text-slate-400" data-i18n="customSub">Parametrlarni o'zingiz moslashtiring</p>
+                    </div>
+                    <button onclick="showScreen('main-menu')" class="w-10 h-10 rounded-xl glass-button flex items-center justify-center">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-2" data-i18n="customQCount">Savollar Soni:</label>
+                        <select id="custom-q-count" class="w-full bg-slate-900 border border-white/10 p-3 rounded-xl text-sm font-bold">
+                            <option value="5">5 ta savol</option>
+                            <option value="10" selected>10 ta savol</option>
+                            <option value="15">15 ta savol</option>
+                            <option value="20">20 ta savol</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-2" data-i18n="customTime">Vaqt Chegarasi (soniya):</label>
+                        <select id="custom-time-limit" class="w-full bg-slate-900 border border-white/10 p-3 rounded-xl text-sm font-bold">
+                            <option value="5">5s (Super Tez)</option>
+                            <option value="10" selected>10s (Standart)</option>
+                            <option value="15">15s (Oson)</option>
+                            <option value="30">30s (Erkin)</option>
+                        </select>
+                    </div>
+
+                    <button onclick="startCustomGame()" class="w-full py-4 rounded-2xl bg-indigo-600 font-extrabold text-white shadow-xl hover:bg-indigo-700 transition" data-i18n="customStartBtn">
+                        MAXSUS TESTNI BOSHLASH
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="w-full text-center p-4 text-xs text-slate-500 z-10">
+        Bilimdon Pro &copy; 2026. Bilimlar maskani.
+    </footer>
+
+    <!-- SCRIPT SECTION -->
+    <script>
+        /* =========================================================================
+           I18N DICTIONARY & LANGUAGE SWITCHER
+           ========================================================================= */
+
+        const i18n = {
+            uz: {
+                appSubtitle: "Intellektual Ta'lim Platformasi",
+                userDefaultTitle: "Bilim Izlovchi",
+                scoreLabel: "BALL",
+                gamesLabel: "O'YINLAR",
+                accuracyLabel: "ANIQLIK",
+                startBtn: "Boshlash",
+                learnBtn: "O'rganish",
+                modeClassicTitle: "Klassik Sinov",
+                modeClassicDesc: "10 ta savol, vaqt balansi bilan.",
+                modeSurvivalTitle: "Omon Qolish",
+                modeSurvivalDesc: "3 ta jon bilan cheksiz test.",
+                modeBlitzTitle: "Blitz 60s",
+                modeBlitzDesc: "60 soniyada maksimal to'g'ri javob.",
+                modeLearnTitle: "Flashcard",
+                modeLearnDesc: "Taymersiz va shtrafsiz o'rganish.",
+                btnProfile: "Statistika & Profil",
+                btnBadges: "Yutuqlar",
+                btnCustom: "Maxsus Konstruktor",
+                setupSub: "O'yin parametrini tanlang",
+                stepSubject: "1. Fanni tanlang:",
+                subMath: "Matematika",
+                subRussian: "Rus Tili",
+                subEnglish: "Ingliz Tili",
+                subGeneral: "Umumiy Bilim",
+                stepDifficulty: "2. Qiyinlik darajasi:",
+                diffEasy: "Oson",
+                diffMedium: "O'rtacha",
+                diffHard: "Qiyin",
+                startGameBtn: "O'YINNI BOSHLASH",
+                timeLabel: "VAQT",
+                lifeFreeze: "Muzlatish",
+                lifeSkip: "O'tkazish",
+                exitBtn: "Chiqish",
+                resultTitle: "O'yin Yakunlandi!",
+                resultSubtitle: "Ajoyib natija ko'rsatdingiz!",
+                correctLabel: "TO'G'RI JAVOBLAR",
+                earnedXpLabel: "OLINGAN XP",
+                replayBtn: "Qaytadan O'ynash",
+                mainMenuBtn: "Bosh Menyuga Qaytish",
+                flashcardSub: "O'z tezligingizda bilimlarni o'rganing",
+                revealBtn: "Javobni Ko'rsatish 👀",
+                prevBtn: "Oldingisi",
+                nextBtn: "Keyingisi",
+                profileTitle: "📊 Profil & Statistika",
+                profileSub: "Erishgan barcha natijalaringiz",
+                subjectAccTitle: "Fanlar bo'yicha aniqlik:",
+                badgesTitle: "🏅 Yutuqlar (Badges)",
+                badgesSub: "O'yin orqali nishonlarni oching",
+                customTitle: "🛠️ Maxsus Test Konstruktori",
+                customSub: "Parametrlarni o'zingiz moslashtiring",
+                customQCount: "Savollar Soni:",
+                customTime: "Vaqt Chegarasi (soniya):",
+                customStartBtn: "MAXSUS TESTNI BOSHLASH",
+                unlockedStatus: "✓ OCHILGAN",
+                lockedStatus: "🔒 QULFLANGAN"
+            },
+            ru: {
+                appSubtitle: "Интеллектуальная Обучающая Платформа",
+                userDefaultTitle: "Искатель Знаний",
+                scoreLabel: "ОЧКИ",
+                gamesLabel: "ИГРЫ",
+                accuracyLabel: "ТОЧНОСТЬ",
+                startBtn: "Начать",
+                learnBtn: "Учить",
+                modeClassicTitle: "Классика",
+                modeClassicDesc: "10 вопросов с таймером.",
+                modeSurvivalTitle: "Выживание",
+                modeSurvivalDesc: "Бесконечные вопросы и 3 жизни.",
+                modeBlitzTitle: "Блиц 60с",
+                modeBlitzDesc: "Максимум ответов за 60 секунд.",
+                modeLearnTitle: "Флешкарты",
+                modeLearnDesc: "Изучение без ограничений времени.",
+                btnProfile: "Статистика и Профиль",
+                btnBadges: "Достижения",
+                btnCustom: "Конструктор",
+                setupSub: "Выберите параметры игры",
+                stepSubject: "1. Выберите предмет:",
+                subMath: "Математика",
+                subRussian: "Русский язык",
+                subEnglish: "Английский язык",
+                subGeneral: "Общие знания",
+                stepDifficulty: "2. Уровень сложности:",
+                diffEasy: "Легкий",
+                diffMedium: "Средний",
+                diffHard: "Сложный",
+                startGameBtn: "НАЧАТЬ ИГРУ",
+                timeLabel: "ВРЕМЯ",
+                lifeFreeze: "Заморозка",
+                lifeSkip: "Пропустить",
+                exitBtn: "Выйти",
+                resultTitle: "Игра Завершена!",
+                resultSubtitle: "Вы показали отличный результат!",
+                correctLabel: "ПРАВИЛЬНЫЕ ОТВЕТЫ",
+                earnedXpLabel: "ПОЛУЧЕНО XP",
+                replayBtn: "Играть Снова",
+                mainMenuBtn: "В Главное Меню",
+                flashcardSub: "Изучайте материал в своем темпе",
+                revealBtn: "Показать Ответ 👀",
+                prevBtn: "Назад",
+                nextBtn: "Вперед",
+                profileTitle: "📊 Профиль и Статистика",
+                profileSub: "Все ваши достижения и точность",
+                subjectAccTitle: "Точность по предметам:",
+                badgesTitle: "🏅 Достижения",
+                badgesSub: "Разблокируйте наградные значки",
+                customTitle: "🛠️ Конструктор Теста",
+                customSub: "Настройте параметры под себя",
+                customQCount: "Количество вопросов:",
+                customTime: "Время на вопрос (секунды):",
+                customStartBtn: "НАЧАТЬ СВОЙ ТЕСТ",
+                unlockedStatus: "✓ ОТКРЫТО",
+                lockedStatus: "🔒 ЗАКРЫТО"
+            }
+        };
+
+        /* =========================================================================
+           QUESTION BANKS (EXTENDED 50+ BILINGUAL HAND-CRAFTED QUESTIONS)
+           ========================================================================= */
+
+        const questionBank = {
+            russian: [
+                { q: "Собака", hint_uz: "O'zbekcha tarjimasini toping", hint_ru: "Перевод на узбекский", options: ["Kuchuk", "Mushuk", "Ot", "Eshak"], a: "Kuchuk", example: "Собака — верный друг человека." },
+                { q: "Книга", hint_uz: "O'zbekcha tarjimasini toping", hint_ru: "Перевод на узбекский", options: ["Kitob", "Daftar", "Qalam", "Stol"], a: "Kitob", example: "Я читаю интересную книгу." },
+                { q: "Шк_ла", hint_uz: "Yetishmayotgan harfni toping", hint_ru: "Вставьте пропущенную букву", options: ["о", "а", "е", "и"], a: "о", example: "Дети идут в школу." },
+                { q: "Яблоко", hint_uz: "O'zbekcha tarjimasi?", hint_ru: "Перевод на узбекский", options: ["Olma", "Nok", "Uzum", "Banan"], a: "Olma" },
+                { q: "Солнце", hint_uz: "O'zbekcha tarjimasi?", hint_ru: "Перевод на узбекский", options: ["Quyosh", "Oy", "Yulduz", "Bulut"], a: "Quyosh" },
+                { q: "Учитель", hint_uz: "O'zbekcha tarjimasi?", hint_ru: "Перевод на узбекский", options: ["O'qituvchi", "O'quvchi", "Shifokor", "Muhandis"], a: "O'qituvchi" },
+                { q: "Пр_красный", hint_uz: "Yetishmayotgan harf?", hint_ru: "Пропущенная буква", options: ["е", "и", "я", "а"], a: "е" },
+                { q: "Семья", hint_uz: "O'zbekcha tarjimasi?", hint_ru: "Перевод на узбекский", options: ["Oila", "Do'st", "Qo'shni", "Maktab"], a: "Oila" },
+                { q: "Медведь", hint_uz: "Qaysi hayvon?", hint_ru: "Перевод слова", options: ["Ayiq", "Bo'ri", "Tug'ki", "Quyon"], a: "Ayiq" },
+                { q: "Благодарность", hint_uz: "O'zbekcha tarjimasi?", hint_ru: "Перевод слова", options: ["Minnatdorchilik", "Xayriya", "Kechirim", "Saxovat"], a: "Minnatdorchilik" },
+                { q: "Искр_нний", hint_uz: "Yetishmayotgan harf?", hint_ru: "Пропущенная буква", options: ["е", "и", "а", "о"], a: "е" },
+                { q: "Путешествие", hint_uz: "O'zbekcha tarjimasi?", hint_ru: "Перевод слова", options: ["Sayohat", "Sarguzasht", "Tanaffus", "Transport"], a: "Sayohat" },
+                { q: "Здравствуйте", hint_uz: "Ma'nosi qaysi?", hint_ru: "Значение фразы", options: ["Assalomu alaykum", "Xayr", "Rahmat", "Iltimos"], a: "Assalomu alaykum" },
+                { q: "Достопримечательность", hint_uz: "Ma'nosini toping", hint_ru: "Перевод слова", options: ["Diqqatga sazovor joy", "Mas'uliyat", "Sayohat narsasi", "Hujjat"], a: "Diqqatga sazovor joy" },
+                { q: "Вдохновение", hint_uz: "O'zbekcha tarjimasi?", hint_ru: "Перевод слова", options: ["Ilhom", "Nafas", "Xohish", "Orzu"], a: "Ilhom" },
+                { q: "Победа", hint_uz: "O'zbekcha tarjimasi?", hint_ru: "Перевод слова", options: ["G'alaba", "Mag'lubiyat", "Tinchlik", "Umid"], a: "G'alaba" }
+            ],
+
+            english: [
+                { q: "Apple", hint_uz: "Tarjimasini toping", hint_ru: "Выберите перевод", options: ["Olma", "Orik", "Gilos", "Banan"], a: "Olma" },
+                { q: "Water", hint_uz: "Tarjimasini toping", hint_ru: "Выберите перевод", options: ["Suv", "Choy", "Sut", "Sharbat"], a: "Suv" },
+                { q: "Friend", hint_uz: "Tarjimasini toping", hint_ru: "Выберите перевод", options: ["Do'st", "Oila", "Qo'shni", "Aka"], a: "Do'st" },
+                { q: "Beautiful", hint_uz: "Tarjimasini toping", hint_ru: "Выберите перевод", options: ["Chiroyli", "Xunuk", "Aqlli", "Katta"], a: "Chiroyli" },
+                { q: "She ___ playing tennis.", hint_uz: "Grammatika", hint_ru: "Грамматика", options: ["is", "are", "am", "be"], a: "is" },
+                { q: "Knowledge", hint_uz: "Tarjimasini toping", hint_ru: "Выберите перевод", options: ["Bilim", "Tadbirlar", "Kitob", "Fikr"], a: "Bilim" },
+                { q: "Opportunity", hint_uz: "Ma'nosini toping", hint_ru: "Значение слова", options: ["Imkoniyat", "Muammo", "Aholi", "Tashkilot"], a: "Imkoniyat" },
+                { q: "They have ___ their work.", hint_uz: "Fe'l shaklini toping", hint_ru: "Форма глагола", options: ["finished", "finish", "finishing", "finishes"], a: "finished" },
+                { q: "Acquaintance", hint_uz: "Tarjimasini toping", hint_ru: "Выберите перевод", options: ["Tanish bilish", "Qarindosh", "Hamkasb", "Begona"], a: "Tanish bilish" },
+                { q: "Courage", hint_uz: "Tarjimasini toping", hint_ru: "Выберите перевод", options: ["Jasorat", "Qo'rqinch", "Aqllilik", "Boylik"], a: "Jasorat" },
+                { q: "Improve", hint_uz: "Tarjimasini toping", hint_ru: "Выберите перевод", options: ["Yaxshilamoq", "Buzmoq", "Tugatmoq", "Boshlamoq"], a: "Yaxshilamoq" },
+                { q: "Curious", hint_uz: "Tarjimasini toping", hint_ru: "Выберите перевод", options: ["Qiziquvchan", "Zerikarli", "Xafa", "G'azablangan"], a: "Qiziquvchan" }
+            ],
+
+            general: [
+                { q: "O'zbekiston poytaxti qaysi shahar?", hint_uz: "Geografiya", hint_ru: "География", options: ["Toshkent", "Samarqand", "Buxoro", "Namangan"], a: "Toshkent" },
+                { q: "Dunyo bo'yicha eng katta ummon qaysi?", hint_uz: "Geografiya", hint_ru: "География", options: ["Tinch ummoni", "Atlantika ummoni", "Hind ummoni", "Shimoliy Muz ummoni"], a: "Tinch ummoni" },
+                { q: "Inson tanasidagi eng katta organ qaysi?", hint_uz: "Biologiya", hint_ru: "Биология", options: ["Teri", "Jigar", "Yurak", "O'pka"], a: "Teri" },
+                { q: "Qaysi planetada 'Qizil planeta' deb nom berilgan?", hint_uz: "Astronomiya", hint_ru: "Астрономия", options: ["Mars", "Venera", "Yupiter", "Saturn"], a: "Mars" },
+                { q: "Alisher Navoiy qaysi asrda yashagan?", hint_uz: "Tarix & Adabiyot", hint_ru: "История и литература", options: ["XV asr", "XIV asr", "XVI asr", "XIII asr"], a: "XV asr" },
+                { q: "Quyosh tizimidagi eng katta planeta qaysi?", hint_uz: "Astronomiya", hint_ru: "Астрономия", options: ["Yupiter", "Saturn", "Uran", "Neptun"], a: "Yupiter" },
+                { q: "Suvning kimyoviy formulasi qanday?", hint_uz: "Kimyo", hint_ru: "Химия", options: ["H2O", "CO2", "NaCl", "O2"], a: "H2O" }
+            ]
+        };
+
+        /* Dynamic Math Question Generator */
+        function generateMathQuestion(difficulty, lang = 'uz') {
+            let n1, n2, op, ans;
+
+            if (difficulty === 'easy') {
+                op = Math.random() > 0.5 ? '+' : '-';
+                n1 = Math.floor(Math.random() * 30) + 1;
+                n2 = Math.floor(Math.random() * 30) + 1;
+                if (op === '-' && n1 < n2) [n1, n2] = [n2, n1];
+                ans = op === '+' ? n1 + n2 : n1 - n2;
+            } else if (difficulty === 'medium') {
+                const ops = ['+', '-', '×'];
+                op = ops[Math.floor(Math.random() * ops.length)];
+                if (op === '×') {
+                    n1 = Math.floor(Math.random() * 12) + 2;
+                    n2 = Math.floor(Math.random() * 10) + 2;
+                    ans = n1 * n2;
+                } else {
+                    n1 = Math.floor(Math.random() * 70) + 10;
+                    n2 = Math.floor(Math.random() * 70) + 10;
+                    if (op === '-' && n1 < n2) [n1, n2] = [n2, n1];
+                    ans = op === '+' ? n1 + n2 : n1 - n2;
+                }
+            } else {
+                const ops = ['+', '-', '×', '÷', '%'];
+                op = ops[Math.floor(Math.random() * ops.length)];
+                if (op === '÷') {
+                    n2 = Math.floor(Math.random() * 10) + 2;
+                    ans = Math.floor(Math.random() * 12) + 2;
+                    n1 = n2 * ans;
+                } else if (op === '×') {
+                    n1 = Math.floor(Math.random() * 20) + 4;
+                    n2 = Math.floor(Math.random() * 15) + 3;
+                    ans = n1 * n2;
+                } else if (op === '%') {
+                    n2 = [10, 20, 25, 50][Math.floor(Math.random() * 4)];
+                    n1 = Math.floor(Math.random() * 10) * 10 + 100;
+                    ans = (n1 * n2) / 100;
+                    const questionText = lang === 'ru' 
+                        ? `Чему равно ${n2}% от ${n1}?` 
+                        : `${n1} ning ${n2}% qismi nechaga teng?`;
+                    return {
+                        q: questionText,
+                        hint_uz: "Foizni hisoblang",
+                        hint_ru: "Вычислите процент",
+                        options: shuffleOptions([ans, ans + 10, ans - 5, ans + 5].map(String)),
+                        a: String(ans)
+                    };
+                } else {
+                    n1 = Math.floor(Math.random() * 150) + 20;
+                    n2 = Math.floor(Math.random() * 150) + 20;
+                    if (op === '-' && n1 < n2) [n1, n2] = [n2, n1];
+                    ans = op === '+' ? n1 + n2 : n1 - n2;
+                }
+            }
+
+            let options = [ans];
+            while (options.length < 4) {
+                let diff = (Math.floor(Math.random() * 5) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                let wrong = ans + diff;
+                if (!options.includes(wrong) && wrong >= 0) options.push(wrong);
+            }
+
+            return {
+                q: `${n1} ${op} ${n2} = ?`,
+                hint_uz: "Amalni bajaring",
+                hint_ru: "Решите выражение",
+                options: shuffleOptions(options.map(String)),
+                a: String(ans)
+            };
+        }
+
+        function shuffleOptions(arr) {
+            return arr.sort(() => Math.random() - 0.5);
+        }
+
+        /* =========================================================================
+           STATE MANAGEMENT & LOCAL STORAGE
+           ========================================================================= */
+
+        let state = {
+            lang: 'uz', // uz or ru
+            user: {
+                level: 1,
+                xp: 0,
+                totalScore: 0,
+                totalGames: 0,
+                totalQuestions: 0,
+                totalCorrect: 0,
+                maxStreak: 0,
+                subjectStats: {
+                    math: { asked: 0, correct: 0 },
+                    russian: { asked: 0, correct: 0 },
+                    english: { asked: 0, correct: 0 },
+                    general: { asked: 0, correct: 0 }
+                },
+                badges: []
+            },
+            game: {
+                mode: 'classic',
+                category: 'math',
+                difficulty: 'easy',
+                score: 0,
+                streak: 0,
+                lives: 3,
+                currentQIndex: 0,
+                maxQuestions: 10,
+                timeLimit: 10,
+                timeLeft: 10,
+                timer: null,
+                currentQ: null,
+                lifelinesUsed: { '5050': false, freeze: false, double: false, skip: false },
+                doubleMultiplier: false
+            },
+            settings: {
+                sound: true,
+                theme: 'dark'
+            }
+        };
+
+        function loadState() {
+            const saved = localStorage.getItem('bilimdon_pro_state_v2');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    state.user = { ...state.user, ...parsed.user };
+                    state.settings = { ...state.settings, ...parsed.settings };
+                    if (parsed.lang) state.lang = parsed.lang;
+                } catch(e) {}
+            }
+            applyTheme();
+            applyLanguageUI();
+            updateUserUI();
+        }
+
+        function saveState() {
+            localStorage.setItem('bilimdon_pro_state_v2', JSON.stringify({
+                user: state.user,
+                settings: state.settings,
+                lang: state.lang
+            }));
+        }
+
+        /* =========================================================================
+           AUDIO & TEXT-TO-SPEECH
+           ========================================================================= */
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!state.settings.sound) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'win') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(554.37, now + 0.1);
+                osc.frequency.setValueAtTime(659.25, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+        }
+
+        function toggleSound() {
+            state.settings.sound = !state.settings.sound;
+            document.getElementById('sound-icon').className = state.settings.sound ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+            saveState();
+        }
+
+        function toggleTheme() {
+            state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark';
+            applyTheme();
+            saveState();
+        }
+
+        function applyTheme() {
+            if (state.settings.theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.documentElement.classList.remove('light');
+            } else {
+                document.documentElement.classList.add('light');
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function speakText(text, lang = 'en-US') {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function speakCurrentQuestion() {
+            if (!state.game.currentQ) return;
+            const lang = state.game.category === 'russian' ? 'ru-RU' : 'en-US';
+            speakText(state.game.currentQ.q, lang);
+        }
+
+        /* =========================================================================
+           LANGUAGE SWITCHER & UI LOCALIZATION
+           ========================================================================= */
+
+        function toggleAppLanguage() {
+            state.lang = state.lang === 'uz' ? 'ru' : 'uz';
+            applyLanguageUI();
+            saveState();
+        }
+
+        function applyLanguageUI() {
+            document.getElementById('current-lang-code').innerText = state.lang.toUpperCase();
+            const dict = i18n[state.lang];
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) {
+                    el.innerText = dict[key];
+                }
+            });
+        }
+
+        /* =========================================================================
+           SCREEN NAVIGATION
+           ========================================================================= */
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen-view').forEach(s => s.classList.add('hidden'));
+            const target = document.getElementById(`screen-${screenId}`);
+            if (target) target.classList.remove('hidden');
+
+            if (screenId === 'profile-screen') updateProfileStatsUI();
+            if (screenId === 'achievements-screen') renderAchievementsUI();
+            if (screenId === 'flashcards-screen') loadFlashcards('russian');
+        }
+
+        /* =========================================================================
+           GAME LOGIC
+           ========================================================================= */
+
+        function selectGameMode(mode) {
+            state.game.mode = mode;
+            const dict = i18n[state.lang];
+            const titles = {
+                classic: dict.modeClassicTitle,
+                survival: dict.modeSurvivalTitle,
+                blitz: dict.modeBlitzTitle
+            };
+            document.getElementById('selected-mode-title').innerText = titles[mode] || dict.modeClassicTitle;
+            showScreen('setup');
+        }
+
+        function selectCategory(cat) {
+            state.game.category = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('border-amber-500/50', 'bg-amber-500/20'));
+            document.getElementById(`cat-btn-${cat}`).classList.add('border-amber-500/50', 'bg-amber-500/20');
+        }
+
+        function selectDifficulty(diff) {
+            state.game.difficulty = diff;
+            document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('border-emerald-500/50', 'bg-emerald-500/20'));
+            document.getElementById(`diff-btn-${diff}`).classList.add('border-emerald-500/50', 'bg-emerald-500/20');
+        }
+
+        function startCustomGame() {
+            state.game.mode = 'classic';
+            state.game.category = 'math';
+            state.game.difficulty = 'medium';
+            state.game.maxQuestions = parseInt(document.getElementById('custom-q-count').value);
+            state.game.timeLimit = parseInt(document.getElementById('custom-time-limit').value);
+            startGameSession(true);
+        }
+
+        function startGameSession(isCustom = false) {
+            state.game.score = 0;
+            state.game.streak = 0;
+            state.game.lives = 3;
+            state.game.currentQIndex = 0;
+            state.game.lifelinesUsed = { '5050': false, freeze: false, double: false, skip: false };
+
+            if (!isCustom) {
+                if (state.game.mode === 'classic') {
+                    state.game.maxQuestions = 10;
+                    state.game.timeLimit = state.game.difficulty === 'easy' ? 15 : state.game.difficulty === 'medium' ? 10 : 6;
+                } else if (state.game.mode === 'survival') {
+                    state.game.maxQuestions = 999;
+                    state.game.timeLimit = 12;
+                } else if (state.game.mode === 'blitz') {
+                    state.game.maxQuestions = 999;
+                    state.game.timeLimit = 60;
+                }
+            }
+
+            resetLifelineButtonsUI();
+            updateQuizHeaderUI();
+            showScreen('quiz');
+            nextQuizQuestion();
+        }
+
+        function updateQuizHeaderUI() {
+            document.getElementById('quiz-score').innerText = state.game.score;
+            document.getElementById('quiz-streak').innerText = `x${(1 + state.game.streak * 0.2).toFixed(1)}`;
+
+            const livesContainer = document.getElementById('lives-container');
+            if (state.game.mode === 'survival') {
+                livesContainer.classList.remove('hidden');
+                for (let i = 1; i <= 3; i++) {
+                    const heart = document.getElementById(`heart-${i}`);
+                    heart.style.opacity = i <= state.game.lives ? "1" : "0.2";
+                }
+            } else {
+                livesContainer.classList.add('hidden');
+            }
+        }
+
+        function nextQuizQuestion() {
+            clearInterval(state.game.timer);
+            state.game.currentQIndex++;
+            state.game.doubleMultiplier = false;
+
+            let qObj = null;
+            if (state.game.category === 'math') {
+                qObj = generateMathQuestion(state.game.difficulty, state.lang);
+            } else {
+                const list = questionBank[state.game.category] || questionBank.general;
+                const raw = list[Math.floor(Math.random() * list.length)];
+                qObj = {
+                    q: raw.q,
+                    hint: state.lang === 'ru' ? raw.hint_ru : raw.hint_uz,
+                    options: shuffleOptions([...raw.options]),
+                    a: raw.a
+                };
+            }
+
+            state.game.currentQ = qObj;
+
+            const dict = i18n[state.lang];
+            const badgeMap = {
+                math: dict.subMath,
+                russian: dict.subRussian,
+                english: dict.subEnglish,
+                general: dict.subGeneral
+            };
+
+            document.getElementById('quiz-badge').innerText = badgeMap[state.game.category] || dict.subMath;
+            document.getElementById('quiz-question-counter').innerText = `${state.game.currentQIndex} / ${state.game.maxQuestions === 999 ? '∞' : state.game.maxQuestions}`;
+            document.getElementById('quiz-question-text').innerText = qObj.q;
+            document.getElementById('quiz-question-hint').innerText = qObj.hint || '';
+
+            const ttsBtn = document.getElementById('tts-btn');
+            if (state.game.category === 'russian' || state.game.category === 'english') {
+                ttsBtn.classList.remove('hidden');
+            } else {
+                ttsBtn.classList.add('hidden');
+            }
+
+            const grid = document.getElementById('quiz-options-grid');
+            grid.innerHTML = '';
+            qObj.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn py-4 px-4 rounded-2xl glass-button text-base md:text-lg font-bold text-center border border-white/10 shadow-md flex items-center justify-center';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, btn);
+                grid.appendChild(btn);
+            });
+
+            startQuizTimer();
+        }
+
+        function startQuizTimer() {
+            state.game.timeLeft = state.game.timeLimit;
+            const bar = document.getElementById('quiz-timer-bar');
+            const text = document.getElementById('quiz-timer-text');
+
+            bar.style.width = '100%';
+            bar.className = 'timer-progress bg-emerald-400 h-full w-full';
+
+            const interval = 100;
+
+            state.game.timer = setInterval(() => {
+                state.game.timeLeft -= 0.1;
+                text.innerText = `${Math.max(0, Math.ceil(state.game.timeLeft))}s`;
+                const pct = (state.game.timeLeft / state.game.timeLimit) * 100;
+                bar.style.width = `${Math.max(0, pct)}%`;
+
+                if (pct < 30) bar.className = 'timer-progress bg-rose-500 h-full w-full';
+                else if (pct < 60) bar.className = 'timer-progress bg-amber-400 h-full w-full';
+
+                if (state.game.timeLeft <= 0) {
+                    clearInterval(state.game.timer);
+                    handleTimeOut();
+                }
+            }, interval);
+        }
+
+        function checkAnswer(selectedOpt, btnEl) {
+            clearInterval(state.game.timer);
+            const isCorrect = selectedOpt === state.game.currentQ.a;
+
+            state.user.totalQuestions++;
+            state.user.subjectStats[state.game.category].asked++;
+
+            if (isCorrect) {
+                playSound('correct');
+                state.game.streak++;
+                state.user.totalCorrect++;
+                state.user.subjectStats[state.game.category].correct++;
+
+                if (state.game.streak > state.user.maxStreak) {
+                    state.user.maxStreak = state.game.streak;
+                }
+
+                let basePoints = state.game.difficulty === 'easy' ? 10 : state.game.difficulty === 'medium' ? 20 : 30;
+                let multiplier = 1 + (state.game.streak * 0.2);
+                if (state.game.doubleMultiplier) multiplier *= 2;
+
+                const earned = Math.round(basePoints * multiplier);
+                state.game.score += earned;
+
+                btnEl.classList.remove('glass-button');
+                btnEl.classList.add('bg-emerald-500', 'text-white', 'border-emerald-400');
+
+                if (state.game.streak >= 5 && state.game.streak % 5 === 0) {
+                    confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
+                }
+
+                setTimeout(() => {
+                    updateQuizHeaderUI();
+                    if (state.game.currentQIndex >= state.game.maxQuestions) {
+                        endGameSession();
+                    } else {
+                        nextQuizQuestion();
+                    }
+                }, 400);
+
+            } else {
+                playSound('wrong');
+                state.game.streak = 0;
+                btnEl.classList.remove('glass-button');
+                btnEl.classList.add('bg-rose-600', 'text-white', 'border-rose-500');
+
+                document.querySelectorAll('.option-btn').forEach(b => {
+                    if (b.innerText === state.game.currentQ.a) {
+                        b.classList.add('bg-emerald-500/50', 'border-emerald-400');
+                    }
+                });
+
+                if (state.game.mode === 'survival') {
+                    state.game.lives--;
+                    updateQuizHeaderUI();
+                    if (state.game.lives <= 0) {
+                        setTimeout(endGameSession, 600);
+                        return;
+                    }
+                }
+
+                setTimeout(() => {
+                    updateQuizHeaderUI();
+                    if (state.game.mode === 'classic' && state.game.currentQIndex >= state.game.maxQuestions) {
+                        endGameSession();
+                    } else {
+                        nextQuizQuestion();
+                    }
+                }, 600);
+            }
+        }
+
+        function handleTimeOut() {
+            playSound('wrong');
+            state.game.streak = 0;
+            if (state.game.mode === 'survival') {
+                state.game.lives--;
+                updateQuizHeaderUI();
+                if (state.game.lives <= 0) {
+                    endGameSession();
+                    return;
+                }
+            }
+            if (state.game.currentQIndex >= state.game.maxQuestions) {
+                endGameSession();
+            } else {
+                nextQuizQuestion();
+            }
+        }
+
+        function resetLifelineButtonsUI() {
+            ['5050', 'freeze', 'double', 'skip'].forEach(type => {
+                const b = document.getElementById(`life-${type}`);
+                b.disabled = false;
+                b.style.opacity = "1";
+            });
+        }
+
+        function useLifeline(type) {
+            if (state.game.lifelinesUsed[type]) return;
+            state.game.lifelinesUsed[type] = true;
+
+            const btn = document.getElementById(`life-${type}`);
+            btn.disabled = true;
+            btn.style.opacity = "0.3";
+
+            if (type === '5050') {
+                const options = Array.from(document.querySelectorAll('.option-btn'));
+                let removed = 0;
+                options.forEach(b => {
+                    if (b.innerText !== state.game.currentQ.a && removed < 2) {
+                        b.style.visibility = 'hidden';
+                        removed++;
+                    }
+                });
+            } else if (type === 'freeze') {
+                clearInterval(state.game.timer);
+                setTimeout(startQuizTimer, 4000);
+            } else if (type === 'double') {
+                state.game.doubleMultiplier = true;
+            } else if (type === 'skip') {
+                nextQuizQuestion();
+            }
+        }
+
+        function confirmExitGame() {
+            const msg = state.lang === 'ru' ? "Вы уверены, что хотите выйти?" : "Haqiqatdan ham o'yinni tark etmoqchimisiz?";
+            if (confirm(msg)) {
+                clearInterval(state.game.timer);
+                showScreen('main-menu');
+            }
+        }
+
+        function endGameSession() {
+            clearInterval(state.game.timer);
+
+            const earnedXP = Math.round(state.game.score / 2);
+            state.user.xp += earnedXP;
+            state.user.totalScore += state.game.score;
+            state.user.totalGames++;
+
+            const requiredXP = state.user.level * 100;
+            if (state.user.xp >= requiredXP) {
+                state.user.level++;
+                state.user.xp -= requiredXP;
+                confetti({ particleCount: 120, spread: 90, origin: { y: 0.5 } });
+            }
+
+            checkBadges();
+            saveState();
+            updateUserUI();
+
+            document.getElementById('res-score').innerText = state.game.score;
+            document.getElementById('res-correct').innerText = `${state.game.currentQIndex}`;
+            document.getElementById('res-xp').innerText = `+${earnedXP} XP`;
+            document.getElementById('res-streak').innerText = state.user.maxStreak;
+
+            playSound('win');
+            showScreen('results');
+        }
+
+        /* =========================================================================
+           USER PROFILE, ACHIEVEMENTS & STATS
+           ========================================================================= */
+
+        const badgesList = [
+            { id: 'first_win', name_uz: 'Birinchi Qadam', name_ru: 'Первый Шаг', icon: '🐣', desc_uz: '1 ta o\'yin o\'ynang', desc_ru: 'Сыграйте 1 игру' },
+            { id: 'math_wizard', name_uz: 'Matematika Ustasi', name_ru: 'Мастер Математики', icon: '📐', desc_uz: 'Matematikadan 10 ta to\'g\'ri javob', desc_ru: '10 верных ответов по математике' },
+            { id: 'polyglot', name_uz: 'Poliglot', name_ru: 'Полиглот', icon: '🌐', desc_uz: 'Chet tillaridan 15 ta to\'g\'ri javob', desc_ru: '15 верных ответов по языкам' },
+            { id: 'streak_master', name_uz: 'Streak Master', name_ru: 'Мастер Серий', icon: '🔥', desc_uz: '5 ta ketma-ket to\'g\'ri javob', desc_ru: 'Серия из 5 правильных ответов' },
+            { id: 'level_5', name_uz: 'Bilimdon Ekspert', name_ru: 'Знаток Эксперт', icon: '👑', desc_uz: 'Level 5 ga erishing', desc_ru: 'Достигните уровня 5' }
+        ];
+
+        function checkBadges() {
+            badgesList.forEach(badge => {
+                if (!state.user.badges.includes(badge.id)) {
+                    let unlock = false;
+                    if (badge.id === 'first_win' && state.user.totalGames >= 1) unlock = true;
+                    if (badge.id === 'streak_master' && state.user.maxStreak >= 5) unlock = true;
+                    if (badge.id === 'level_5' && state.user.level >= 5) unlock = true;
+                    if (badge.id === 'math_wizard' && state.user.subjectStats.math.correct >= 10) unlock = true;
+
+                    if (unlock) state.user.badges.push(badge.id);
+                }
+            });
+        }
+
+        function updateUserUI() {
+            document.getElementById('header-level').innerText = `LVL ${state.user.level}`;
+            document.getElementById('user-level-badge').innerText = `Level ${state.user.level}`;
+            document.getElementById('total-score-val').innerText = state.user.totalScore;
+            document.getElementById('total-games-val').innerText = state.user.totalGames;
+
+            const acc = state.user.totalQuestions > 0 
+                ? Math.round((state.user.totalCorrect / state.user.totalQuestions) * 100) 
+                : 0;
+            document.getElementById('total-acc-val').innerText = `${acc}%`;
+
+            const reqXP = state.user.level * 100;
+            const pct = Math.min(100, Math.round((state.user.xp / reqXP) * 100));
+            document.getElementById('user-xp-bar').style.width = `${pct}%`;
+            document.getElementById('user-xp-text').innerText = `${state.user.xp} / ${reqXP} XP`;
+        }
+
+        function updateProfileStatsUI() {
+            document.getElementById('stat-total-games').innerText = state.user.totalGames;
+            document.getElementById('stat-total-score').innerText = state.user.totalScore;
+            document.getElementById('stat-max-streak').innerText = state.user.maxStreak;
+
+            const totalAcc = state.user.totalQuestions > 0 
+                ? Math.round((state.user.totalCorrect / state.user.totalQuestions) * 100) 
+                : 0;
+            document.getElementById('stat-accuracy').innerText = `${totalAcc}%`;
+
+            ['math', 'russian', 'english', 'general'].forEach(sub => {
+                const st = state.user.subjectStats[sub];
+                const pct = st.asked > 0 ? Math.round((st.correct / st.asked) * 100) : 0;
+                document.getElementById(`acc-${sub}-val`).innerText = `${pct}%`;
+                document.getElementById(`acc-${sub}-bar`).style.width = `${pct}%`;
+            });
+        }
+
+        function renderAchievementsUI() {
+            const grid = document.getElementById('achievements-grid');
+            grid.innerHTML = '';
+
+            const dict = i18n[state.lang];
+
+            badgesList.forEach(b => {
+                const unlocked = state.user.badges.includes(b.id);
+                const name = state.lang === 'ru' ? b.name_ru : b.name_uz;
+                const desc = state.lang === 'ru' ? b.desc_ru : b.desc_uz;
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-2xl border flex items-center gap-4 transition ${unlocked ? 'bg-indigo-500/20 border-indigo-500/40' : 'bg-slate-900/30 border-white/5 opacity-50'}`;
+                card.innerHTML = `
+                    <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-2xl">
+                        ${b.icon}
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm text-white">${name}</h4>
+                        <p class="text-xs text-slate-400">${desc}</p>
+                        <span class="text-[10px] font-extrabold ${unlocked ? 'text-emerald-400' : 'text-slate-500'} mt-1 block">
+                            ${unlocked ? dict.unlockedStatus : dict.lockedStatus}
+                        </span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        /* =========================================================================
+           FLASHCARDS / PRACTICE MODE LOGIC
+           ========================================================================= */
+
+        let fcState = { list: [], index: 0, category: 'russian' };
+
+        function loadFlashcards(cat) {
+            fcState.category = cat;
+            fcState.index = 0;
+            fcState.list = questionBank[cat] || questionBank.general;
+            renderFlashcard();
+        }
+
+        function renderFlashcard() {
+            const item = fcState.list[fcState.index];
+            if (!item) return;
+
+            document.getElementById('fc-category-badge').innerText = fcState.category.toUpperCase();
+            document.getElementById('fc-term').innerText = item.q;
+            document.getElementById('fc-definition').innerText = item.a;
+            document.getElementById('fc-example').innerText = item.example || (state.lang === 'ru' ? item.hint_ru : item.hint_uz) || '';
+
+            document.getElementById('fc-answer-box').classList.add('hidden');
+            document.getElementById('fc-reveal-btn').classList.remove('hidden');
+            document.getElementById('fc-count').innerText = `${fcState.index + 1} / ${fcState.list.length}`;
+        }
+
+        function revealFlashcardAnswer() {
+            document.getElementById('fc-answer-box').classList.remove('hidden');
+            document.getElementById('fc-reveal-btn').classList.add('hidden');
+        }
+
+        function prevFlashcard() {
+            if (fcState.index > 0) {
+                fcState.index--;
+                renderFlashcard();
+            }
+        }
+
+        function nextFlashcard() {
+            if (fcState.index < fcState.list.length - 1) {
+                fcState.index++;
+                renderFlashcard();
+            }
+        }
+
+        function speakFlashcard() {
+            const item = fcState.list[fcState.index];
+            if (!item) return;
+            const lang = fcState.category === 'russian' ? 'ru-RU' : 'en-US';
+            speakText(item.q, lang);
+        }
+
+        /* INITIALIZATION */
+        window.onload = function() {
+            loadState();
+        };
+    </script>
+</body>
+</html>
